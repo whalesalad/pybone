@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-
 # class Evented(object):
 import pprint
+
 from collections import defaultdict
 
 class Collection(object):
@@ -14,7 +13,45 @@ class Collection(object):
 
     """
 
-    pass
+    _events = ('all', 'add', 'remove', 'change', )
+    _handlers = defaultdict(list)
+    _items = []
+
+    def __init__(self, items=None):
+        self._items = self.convert_items(items) if items else []
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __contains__(self, item):
+        return item in self._items
+
+    def __len__(self):
+        return len(self._items)
+
+    def __getitem__(self, key):
+        return self._items[key]
+
+    def convert_items(self, items):
+        if isinstance(items, dict):
+            items = [items]
+        return [ Item(attributes=i, collection=self) for i in items ]
+
+    def on(self, event, handler):
+        if event in self._events:
+            self._handlers[event].append(handler)
+
+    def emit(self, event, item, extra=None):
+        for handler in (self._handlers[event] + self._handlers['all']):
+            handler(event, item, extra)
+
+    def append(self, item):
+        if not isinstance(item, Item):
+            item = Item(attributes=item, collection=self)
+
+        self._items.append(item)
+
+        self.emit('add', item)
 
 
 class Item(object):
@@ -30,12 +67,15 @@ class Item(object):
     """
 
     _reserved = ('_reserved', '_events', '_handlers', '_attributes', '_collection', )
-    _events = ('add', 'remove', 'change', )
+    _events = ('all', 'add', 'remove', 'change', )
     _handlers = defaultdict(list)
 
     def __init__(self, attributes=None, collection=None):
         self._attributes = attributes if attributes else {}
         self._collection = collection if collection else None
+
+        if self._collection:
+            self.on('change', lambda event, item, extra: self._collection.emit(event, item, extra))
 
     def on(self, event, handler):
         if event in self._events:
@@ -47,6 +87,9 @@ class Item(object):
 
     def __repr__(self):
         return '<Item %s>' % (self._attributes)
+
+    def __eq__(self, other):
+        return self._attributes == other._attributes
 
     def __getitem__(self, key):
         if key in self._reserved:
@@ -92,9 +135,3 @@ class Sensor(object):
     # uname                 {}      change
     # users                 []      add/remove/change
     pass
-
-def main():
-    print "hello"
-
-if __name__ == '__main__':
-    main()
