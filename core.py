@@ -124,6 +124,10 @@ class Item(object):
             return object.__setattr__(self, key, value)
 
         old = self._attributes.get(key, None)
+
+        if old == value:
+            return
+
         self._attributes[key] = value
         self.emit('change', { 'key': key, 'old': old, 'new': value })
 
@@ -132,20 +136,3 @@ class Item(object):
 
     def __contains__(self, key):
         return key in self._attributes.keys()
-
-
-
-class Sensor(object):
-    # connections           []      add/remove/change
-    # disks                 []      add/remove/change
-    # distro                {}      change
-    # hostname              {}      change
-    # libc_version          {}      change
-    # loadavg               {}      change
-    # memory                {}      change
-    # processes             []      add/remove/change
-    # python_version        {}      change
-    # sessions              []      add/remove/change
-    # uname                 {}      change
-    # users                 []      add/remove/change
-    pass
