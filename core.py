@@ -1,8 +1,6 @@
-# class Evented(object):
 import pprint
 
 from collections import defaultdict
-import dictdiffer
 
 class Collection(object):
     """
