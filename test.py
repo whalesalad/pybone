@@ -5,6 +5,13 @@ import pprint
 
 from core import Item, Collection
 
+def format_event(event, item, extra):
+    return {
+        'event': event,
+        'item': item,
+        'extra': extra
+    }
+
 class TestCollections(unittest.TestCase):
     def setUp(self):
         self.events = []
@@ -14,13 +21,7 @@ class TestCollections(unittest.TestCase):
         self.collection.on('all', self.handle_event)
 
     def handle_event(self, event, item, extra):
-        e = {
-            'event': event,
-            'item': item,
-            'extra': extra,
-        }
-
-        self.events.append(e)
+        self.events.append(format_event(event, item, extra))
 
     def test_changing_existing_item(self):
         item = self.collection[0]
@@ -49,6 +50,18 @@ class TestCollections(unittest.TestCase):
 
         self.assertEqual(event['event'], 'add')
 
+    def test_diffing_collection(self):
+        events = []
+
+        collection = Collection()
+        collection.on('all', lambda event, item, extra: events.append(format_event(event,item,extra)))
+
+        for x in xrange(3):
+            collection.append({ 'disk': '/dev/sda%s' % x })
+
+        self.assertTrue(len(events), 3)
+
+        collection.replace({ 'disk': '/dev/sda1' })
 
 class TestItem(unittest.TestCase):
     def setUp(self):

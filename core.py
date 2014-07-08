@@ -2,6 +2,7 @@
 import pprint
 
 from collections import defaultdict
+import dictdiffer
 
 class Collection(object):
     """
@@ -32,6 +33,9 @@ class Collection(object):
     def __getitem__(self, key):
         return self._items[key]
 
+    def __repr__(self):
+        return repr(self._items)
+
     def convert_items(self, items):
         if isinstance(items, dict):
             items = [items]
@@ -42,7 +46,10 @@ class Collection(object):
             self._handlers[event].append(handler)
 
     def emit(self, event, item, extra=None):
-        for handler in (self._handlers[event] + self._handlers['all']):
+        for handler in self._handlers[event]:
+            handler(event, item, extra)
+
+        for handler in self._handlers['all']:
             handler(event, item, extra)
 
     def append(self, item):
@@ -52,6 +59,13 @@ class Collection(object):
         self._items.append(item)
 
         self.emit('add', item)
+
+    def replace(self, items):
+        new = self.convert_items(items)
+        old = self._items
+
+        pprint.pprint(dict(old=old))
+        pprint.pprint(dict(new=new))
 
 
 class Item(object):
@@ -86,7 +100,7 @@ class Item(object):
             handler(event, self, extra)
 
     def __repr__(self):
-        return '<Item %s>' % (self._attributes)
+        return '<Item %s>' % ', '.join( [ "'%s': '%s'" % (x,y) for x,y in self._attributes.iteritems() ] )
 
     def __eq__(self, other):
         return self._attributes == other._attributes
